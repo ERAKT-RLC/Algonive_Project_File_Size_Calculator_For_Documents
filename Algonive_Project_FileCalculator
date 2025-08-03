@@ -1,0 +1,140 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+
+public class FileAnalyzerTxtOnly extends JFrame {
+    private JButton upload;
+    private JLabel filePathLabel;
+    private JTextArea fileContentArea, resultArea;
+
+    public FileAnalyzerTxtOnly() {
+        setTitle("📄 File Analyzer Tool");
+        setSize(900, 700);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        // Top Panel (Header + Upload)
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new BorderLayout());
+        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        topPanel.setBackground(new Color(245, 245, 245));
+
+        JLabel headerLabel = new JLabel("⬇ Upload a file to read its content and display its stats:");
+        headerLabel.setFont(new Font("SansSerif", Font.BOLD, 16));
+
+        JPanel uploadPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        upload = new JButton("Upload File");
+        upload.setFont(new Font("SansSerif", Font.BOLD, 14));
+
+        filePathLabel = new JLabel("No File Selected");
+        filePathLabel.setFont(new Font("SansSerif", Font.PLAIN, 14));
+
+        uploadPanel.add(upload);
+        uploadPanel.add(filePathLabel);
+
+        topPanel.add(headerLabel, BorderLayout.NORTH);
+        topPanel.add(uploadPanel, BorderLayout.SOUTH);
+
+        // Center Panel (File Content)
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        contentPanel.setBackground(new Color(245,245,245));
+
+        JLabel contentLabel = new JLabel("File Content");
+        contentLabel.setFont(new Font("Serif", Font.BOLD, 16));
+        contentLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        fileContentArea = new JTextArea(20, 70);
+        fileContentArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        fileContentArea.setEditable(false);
+        JScrollPane contentScroll = new JScrollPane(fileContentArea);
+
+        contentPanel.add(contentLabel);
+        contentPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        contentPanel.add(contentScroll);
+
+        // Bottom Panel (Result/Statistics)
+        JPanel resultPanel = new JPanel();
+        resultPanel.setLayout(new BoxLayout(resultPanel, BoxLayout.Y_AXIS));
+        resultPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        resultPanel.setBackground(new Color(245,245,245));
+
+        JLabel resultLabel = new JLabel("File Statistics");
+        resultLabel.setFont(new Font("Serif", Font.BOLD, 16));
+        resultLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        resultArea = new JTextArea(6, 70);
+        resultArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        resultArea.setEditable(false);
+        JScrollPane resultScroll = new JScrollPane(resultArea);
+
+        resultPanel.add(resultLabel);
+        resultPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        resultPanel.add(resultScroll);
+
+        // Layout Setup
+        setLayout(new BorderLayout());
+        add(topPanel, BorderLayout.NORTH);
+        add(contentPanel, BorderLayout.CENTER);
+        add(resultPanel, BorderLayout.SOUTH);
+
+        // Upload Button Logic
+        upload.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            int result = fileChooser.showOpenDialog(this);
+
+            if (result == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                filePathLabel.setText("Selected: " + selectedFile.getAbsolutePath());
+
+                StringBuilder contentBuilder = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(new FileReader(selectedFile))) {
+                    fileContentArea.setText("");
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        fileContentArea.append(line + "\n");
+                        contentBuilder.append(line).append("\n");
+                    }
+                } catch (IOException ex) {
+                    fileContentArea.setText("Error reading file: " + ex.getMessage());
+                    return;
+                }
+
+                displayStatistics(selectedFile, contentBuilder.toString());
+            } else {
+                filePathLabel.setText("File selection cancelled.");
+            }
+        });
+
+        setVisible(true);
+    }
+
+    private void displayStatistics(File file, String content) {
+        String[] words = content.trim().split("\\s+");
+        int wordCount = words.length;
+        int charCount = content.replaceAll("\\s+", "").length();
+        double fileSizeKB = file.length() / 1024.0;
+        double fileSizeMB = fileSizeKB / 1024.0;
+
+        String longestWord = "";
+        int totalWordLength = 0;
+
+        for (String word : words) {
+            if (word.length() > longestWord.length())
+                longestWord = word;
+            totalWordLength += word.length();
+        }
+
+        double avgWordLength = (wordCount == 0) ? 0 : (double) totalWordLength / wordCount;
+
+        resultArea.setText(String.format(
+                "File Name: %s\n Size: %.2f KB (%.4f MB)\nWords: %d\n Characters (no spaces): %d\nLongest Word: %s\nAverage Word Length: %.2f",
+                file.getName(), fileSizeKB, fileSizeMB, wordCount, charCount, longestWord, avgWordLength));
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new learning());
+    }
+}
